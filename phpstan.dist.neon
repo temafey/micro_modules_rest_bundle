@@ -9,3 +9,4 @@ parameters:
         - '#Class Symfony\\Component\\ObjectMapper\\#'
         - '#Class Symfony\\Component\\JsonPath\\#'
         - '#Class Symfony\\Component\\Security\\Csrf\\#'
+        - '#Class Doctrine\\DBAL\\#'

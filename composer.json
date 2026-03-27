@@ -5,27 +5,32 @@
     "license": "proprietary",
     "require": {
         "php": "^8.4",
-        "symfony/http-kernel": "^7.0 || ^8.0",
-        "symfony/framework-bundle": "^7.0 || ^8.0",
-        "symfony/dependency-injection": "^7.0 || ^8.0",
+        "micro-module/base": "^0.13",
+        "psr/log": "^2.0 || ^3.0",
         "symfony/config": "^7.0 || ^8.0",
+        "symfony/dependency-injection": "^7.0 || ^8.0",
         "symfony/event-dispatcher": "^7.0 || ^8.0",
+        "symfony/framework-bundle": "^7.0 || ^8.0",
         "symfony/http-foundation": "^7.0 || ^8.0",
+        "symfony/http-kernel": "^7.0 || ^8.0",
         "symfony/routing": "^7.0 || ^8.0"
     },
     "suggest": {
-        "symfony/object-mapper": "Required for DtoMapper component",
-        "symfony/json-path": "Required for JsonPathFilter component",
+        "doctrine/dbal": "Required for HealthCheckController database checks",
         "ramsey/uuid": "Required for ProcessUuidListener and UuidToStringTransform",
+        "symfony/json-path": "Required for JsonPathFilter component",
+        "symfony/object-mapper": "Required for DtoMapper component",
         "symfony/security-csrf": "Required for StatelessCsrfTokenService and CsrfTokenValidationListener"
     },
     "require-dev": {
+        "doctrine/dbal": "^4.4",
         "mockery/mockery": "^1.6",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-mockery": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpunit/phpunit": "^11.0",
         "ramsey/uuid": "^4.0",
+        "symfony/json-path": "^7.3 || ^8.0",
         "symfony/object-mapper": "^7.3 || ^8.0",
         "symfony/security-csrf": "^7.0 || ^8.0",
         "symplify/easy-coding-standard": "^12.0"
@@ -46,6 +51,17 @@
             "MicroModule\\Rest\\Tests\\": "tests/"
         }
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "/home/temafey/php-projects/micro-module/micro_modules_base",
+            "options": {
+                "versions": {
+                    "micro-module/base": "0.13.99"
+                }
+            }
+        }
+    ],
     "minimum-stability": "dev",
     "prefer-stable": true
 }
