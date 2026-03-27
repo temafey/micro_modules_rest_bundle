@@ -1,0 +1,51 @@
+{
+    "name": "micro-module/rest-bundle",
+    "description": "Reusable REST API infrastructure bundle: API versioning, base controllers, DTO mapping, JSON path filtering, event listeners, CSRF protection, and pagination/HATEOAS traits",
+    "type": "symfony-bundle",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.4",
+        "symfony/http-kernel": "^7.0 || ^8.0",
+        "symfony/framework-bundle": "^7.0 || ^8.0",
+        "symfony/dependency-injection": "^7.0 || ^8.0",
+        "symfony/config": "^7.0 || ^8.0",
+        "symfony/event-dispatcher": "^7.0 || ^8.0",
+        "symfony/http-foundation": "^7.0 || ^8.0",
+        "symfony/routing": "^7.0 || ^8.0"
+    },
+    "suggest": {
+        "symfony/object-mapper": "Required for DtoMapper component",
+        "symfony/json-path": "Required for JsonPathFilter component",
+        "ramsey/uuid": "Required for ProcessUuidListener and UuidToStringTransform",
+        "symfony/security-csrf": "Required for StatelessCsrfTokenService and CsrfTokenValidationListener"
+    },
+    "require-dev": {
+        "mockery/mockery": "^1.6",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-mockery": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpunit/phpunit": "^11.0",
+        "ramsey/uuid": "^4.0",
+        "symfony/object-mapper": "^7.3 || ^8.0",
+        "symfony/security-csrf": "^7.0 || ^8.0",
+        "symplify/easy-coding-standard": "^12.0"
+    },
+    "config": {
+        "preferred-install": {
+            "*": "dist"
+        },
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "MicroModule\\Rest\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MicroModule\\Rest\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

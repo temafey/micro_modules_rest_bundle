@@ -1,0 +1,11 @@
+parameters:
+    level: 6
+    paths:
+        - src
+    excludePaths:
+    ignoreErrors:
+        # Optional dependency types may not be available
+        - '#Class Ramsey\\Uuid\\#'
+        - '#Class Symfony\\Component\\ObjectMapper\\#'
+        - '#Class Symfony\\Component\\JsonPath\\#'
+        - '#Class Symfony\\Component\\Security\\Csrf\\#'
