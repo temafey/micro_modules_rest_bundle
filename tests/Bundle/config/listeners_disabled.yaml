@@ -1,0 +1,11 @@
+framework:
+    test: true
+    secret: test_secret
+    http_method_override: false
+
+micro_rest:
+    listeners:
+        domain_exception: false
+        trailing_slash_redirect: false
+        process_uuid: false
+        remove_null_defaults: false

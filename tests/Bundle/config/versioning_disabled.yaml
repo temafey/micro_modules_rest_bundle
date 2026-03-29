@@ -1,0 +1,8 @@
+framework:
+    test: true
+    secret: test_secret
+    http_method_override: false
+
+micro_rest:
+    versioning:
+        enabled: false

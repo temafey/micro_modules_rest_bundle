@@ -1,0 +1,9 @@
+framework:
+    test: true
+    secret: test_secret
+    http_method_override: false
+    csrf_protection: true
+
+micro_rest:
+    csrf:
+        enabled: true
