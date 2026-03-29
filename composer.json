@@ -5,7 +5,7 @@
     "license": "proprietary",
     "require": {
         "php": "^8.4",
-        "micro-module/base": "^0.13",
+        "micro-module/base": "^0.12 || ^0.13 || ^0.14",
         "psr/log": "^2.0 || ^3.0",
         "symfony/config": "^7.0 || ^8.0",
         "symfony/dependency-injection": "^7.0 || ^8.0",
@@ -25,6 +25,7 @@
     "require-dev": {
         "doctrine/dbal": "^4.4",
         "mockery/mockery": "^1.6",
+        "nyholm/symfony-bundle-test": "^3.0",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-mockery": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
@@ -51,17 +52,7 @@
             "MicroModule\\Rest\\Tests\\": "tests/"
         }
     },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "/home/temafey/php-projects/micro-module/micro_modules_base",
-            "options": {
-                "versions": {
-                    "micro-module/base": "0.13.99"
-                }
-            }
-        }
-    ],
+    "repositories": [],
     "minimum-stability": "dev",
     "prefer-stable": true
 }
