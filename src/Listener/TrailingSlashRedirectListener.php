@@ -13,6 +13,10 @@ use Symfony\Component\Routing\RouterInterface;
 
 /**
  * Normalizes API URLs to ensure trailing slash consistency with route definitions.
+ *
+ * When a request path doesn't match any route, this listener tries toggling
+ * the trailing slash and rewrites the request if the alternative matches.
+ * Runs before the router (priority 256 > RouterListener's 32).
  */
 class TrailingSlashRedirectListener implements EventSubscriberInterface
 {
@@ -25,7 +29,6 @@ class TrailingSlashRedirectListener implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            // High priority to run before routing
             KernelEvents::REQUEST => ['onKernelRequest', 256],
         ];
     }
@@ -39,23 +42,21 @@ class TrailingSlashRedirectListener implements EventSubscriberInterface
         $request = $event->getRequest();
         $path = $request->getPathInfo();
 
-        // Skip if root path
         if ($path === '/') {
             return;
         }
 
-        // Only process API routes
         if (! str_starts_with($path, '/api')) {
             return;
         }
 
-        // Try matching the path as-is first
+        // Try matching the path as-is
         try {
             $this->router->match($path);
 
-            return; // Path matches a route, no rewrite needed
+            return;
         } catch (MethodNotAllowedException) {
-            return; // Route exists but method differs, no rewrite needed
+            return;
         } catch (ResourceNotFoundException) {
             // Path doesn't match, try toggling trailing slash
         }
@@ -63,17 +64,20 @@ class TrailingSlashRedirectListener implements EventSubscriberInterface
         $hasTrailingSlash = str_ends_with($path, '/');
         $normalizedPath = $hasTrailingSlash ? rtrim($path, '/') : $path . '/';
 
-        // Verify the alternative path actually matches a route
         try {
             $this->router->match($normalizedPath);
         } catch (ResourceNotFoundException|MethodNotAllowedException) {
-            return; // Neither version matches, let Symfony handle it
+            return;
         }
 
-        $request->server->set(
-            'REQUEST_URI',
-            $normalizedPath . ($request->getQueryString() !== null ? '?' . $request->getQueryString() : '')
-        );
+        // Rewrite REQUEST_URI in server bag
+        $qs = $request->getQueryString();
+        $newUri = $normalizedPath . ($qs !== null ? '?' . $qs : '');
+        $request->server->set('REQUEST_URI', $newUri);
+
+        // Force Symfony to recalculate pathInfo from the updated REQUEST_URI.
+        // Request caches pathInfo/requestUri in private properties — initialize()
+        // is the only public method that fully resets all cached URL properties.
         $request->initialize(
             $request->query->all(),
             $request->request->all(),
@@ -81,7 +85,7 @@ class TrailingSlashRedirectListener implements EventSubscriberInterface
             $request->cookies->all(),
             $request->files->all(),
             $request->server->all(),
-            $request->getContent()
+            $request->getContent(),
         );
     }
 }
