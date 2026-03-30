@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MicroModule\Rest\Listener;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Routing\Exception\MethodNotAllowedException;
@@ -70,22 +71,28 @@ class TrailingSlashRedirectListener implements EventSubscriberInterface
             return;
         }
 
-        // Rewrite REQUEST_URI in server bag
+        // Rewrite REQUEST_URI and force pathInfo recalculation.
+        // We must reset both the server bag AND the cached private properties
+        // (requestUri, pathInfo, baseUrl, basePath) in the Request object.
         $qs = $request->getQueryString();
         $newUri = $normalizedPath . ($qs !== null ? '?' . $qs : '');
         $request->server->set('REQUEST_URI', $newUri);
 
-        // Force Symfony to recalculate pathInfo from the updated REQUEST_URI.
-        // Request caches pathInfo/requestUri in private properties — initialize()
-        // is the only public method that fully resets all cached URL properties.
-        $request->initialize(
-            $request->query->all(),
-            $request->request->all(),
-            $request->attributes->all(),
-            $request->cookies->all(),
-            $request->files->all(),
-            $request->server->all(),
-            $request->getContent(),
-        );
+        // Use Reflection to reset cached URL properties so getPathInfo()
+        // returns the updated path. This avoids initialize() which would
+        // destroy the parsed request body for POST/PUT requests.
+        $this->resetRequestUriCache($request);
+    }
+
+    private function resetRequestUriCache(Request $request): void
+    {
+        $reflection = new \ReflectionClass($request);
+
+        foreach (['requestUri', 'pathInfo', 'baseUrl', 'basePath'] as $property) {
+            if ($reflection->hasProperty($property)) {
+                $prop = $reflection->getProperty($property);
+                $prop->setValue($request, null);
+            }
+        }
     }
 }
