@@ -8,15 +8,18 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\Routing\Exception\MethodNotAllowedException;
-use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\RouterInterface;
 
 /**
- * Normalizes API URLs to ensure trailing slash consistency with route definitions.
+ * Normalizes API URLs for trailing slash consistency.
  *
- * When a request path doesn't match any route, this listener tries toggling
- * the trailing slash and rewrites the request if the alternative matches.
+ * Symfony's UrlMatcher returns a 301 redirect for trailing slash mismatches.
+ * This works for GET but breaks POST/PUT/PATCH/DELETE because clients convert
+ * the method to GET on 301 redirect.
+ *
+ * This listener intercepts the redirect result and rewrites the request
+ * internally so the correct route is matched without any HTTP redirect.
+ *
  * Runs before the router (priority 256 > RouterListener's 32).
  */
 class TrailingSlashRedirectListener implements EventSubscriberInterface
@@ -43,56 +46,44 @@ class TrailingSlashRedirectListener implements EventSubscriberInterface
         $request = $event->getRequest();
         $path = $request->getPathInfo();
 
-        if ($path === '/') {
+        if ($path === '/' || ! str_starts_with($path, '/api')) {
             return;
         }
 
-        if (! str_starts_with($path, '/api')) {
-            return;
-        }
-
-        // Try matching the path as-is
+        // Try matching the path — Symfony returns a redirect controller
+        // for trailing slash mismatches instead of throwing an exception
         try {
-            $this->router->match($path);
-
-            return;
-        } catch (MethodNotAllowedException) {
-            return;
-        } catch (ResourceNotFoundException) {
-            // Path doesn't match, try toggling trailing slash
-        }
-
-        $hasTrailingSlash = str_ends_with($path, '/');
-        $normalizedPath = $hasTrailingSlash ? rtrim($path, '/') : $path . '/';
-
-        try {
-            $this->router->match($normalizedPath);
-        } catch (ResourceNotFoundException|MethodNotAllowedException) {
+            $match = $this->router->match($path);
+        } catch (\Throwable) {
             return;
         }
 
-        // Rewrite REQUEST_URI and force pathInfo recalculation.
-        // We must reset both the server bag AND the cached private properties
-        // (requestUri, pathInfo, baseUrl, basePath) in the Request object.
+        // Check if the match is a trailing slash redirect
+        $controller = $match['_controller'] ?? '';
+        if (! str_contains($controller, 'RedirectController')) {
+            return; // Normal route match, no rewrite needed
+        }
+
+        $redirectPath = $match['path'] ?? null;
+        if ($redirectPath === null) {
+            return;
+        }
+
+        // Build the new URI with query string
         $qs = $request->getQueryString();
-        $newUri = $normalizedPath . ($qs !== null ? '?' . $qs : '');
-        $request->server->set('REQUEST_URI', $newUri);
+        $newUri = $redirectPath . ($qs !== null ? '?' . $qs : '');
 
-        // Use Reflection to reset cached URL properties so getPathInfo()
-        // returns the updated path. This avoids initialize() which would
-        // destroy the parsed request body for POST/PUT requests.
-        $this->resetRequestUriCache($request);
-    }
+        // Create a new sub-request that preserves method, headers, and body
+        // but with the corrected path
+        $subRequest = $request->duplicate(null, null, null, null, null, array_merge(
+            $request->server->all(),
+            ['REQUEST_URI' => $newUri],
+        ));
+        $subRequest->setMethod($request->getMethod());
 
-    private function resetRequestUriCache(Request $request): void
-    {
-        $reflection = new \ReflectionClass($request);
-
-        foreach (['requestUri', 'pathInfo', 'baseUrl', 'basePath'] as $property) {
-            if ($reflection->hasProperty($property)) {
-                $prop = $reflection->getProperty($property);
-                $prop->setValue($request, null);
-            }
-        }
+        // Replace the event response with an internal forward
+        $event->setResponse(
+            $event->getKernel()->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST),
+        );
     }
 }
